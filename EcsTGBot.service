@@ -1,0 +1,10 @@
+[Unit]
+Description=Test Service
+After=multi-user.target
+
+[Service]
+Type=idle
+WorkingDirectory=/root/EcsAutoChangeIPShare/
+ExecStart=/root/EcsAutoChangeIPShare/.venv/bin/python3 /root/EcsAutoChangeIPShare/EcsTGBot.py
+[Install]
+WantedBy=multi-user.target

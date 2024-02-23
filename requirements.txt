@@ -1,0 +1,6 @@
+aliyun-python-sdk-core
+aliyun-python-sdk-vpc==3.0.45
+cloudflare-ddns
+loguru
+python-crontab
+python-telegram-bot

@@ -1,0 +1,17 @@
+{
+  "AccessKeyId": "xxxxxxxxxxxx",
+  "AccessKeySecret": "xxxxxxxxxxxx",
+  "region_id":"cn-hongkong",
+  "name": "aliyun-HK-ECS",
+  "email": "xxxxxxxxxxxx@gmail.com",
+  "api_key": "xxxxxxxxxxxxxx",
+  "domain": "xxxxxxxxxxxx.xyz",
+  "TGBotAPI": "xxxxxxxxxxxxx",
+  "chartId": "xxxxxxxxxxxx",
+  "ddnsUrl": "xxxxxxxxxxxxxxxx",
+  "checkGFWUrl": "xxxxxxxxxxxxxxxxxx",
+  "changeIPCrons": "0 3 * * *",
+  "checkGfwCron": "*/10 * * * *",
+  "Linetype": "BGP",
+  "InstanceId": "xxxxxxxxxxxxxxxxxx"
+}
