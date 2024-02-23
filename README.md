@@ -12,7 +12,7 @@ sudo docker run -d -p 5000:5000  --restart unless-stopped --name checkip bettery
 ## 克隆项目
 
 ```shell
-git clone git@github.com:betteryjs/EcsAutoChangeIP.git
+git clone git@github.com:betteryjs/EcsAutoChangeIPShare.git
 
 cd EcsAutoChangeIP
 ```
