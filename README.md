@@ -8,13 +8,12 @@ sudo docker run -d -p 5000:5000  --restart unless-stopped --name checkip bettery
 ## 在 https://t.me/BotFather 创建通知机器人 
 ## 通过 https://t.me/getmyid_bot 获取私聊chat_id 或者 通过 https://t.me/get_id_bot 获取群组chat_id
 
-## 提前将 Hinet的ip 解析到要设置ddns的域名上
 ## 克隆项目
 
 ```shell
 git clone git@github.com:betteryjs/EcsAutoChangeIPShare.git
 
-cd EcsAutoChangeIP
+cd EcsAutoChangeIPShare
 ```
 
 ## 复制` config.json.exp` 到 `config.json` 修改其中字段
@@ -22,8 +21,8 @@ cd EcsAutoChangeIP
 
 ```shell
 {
-  "AccessKeyId": "xxxxx", 填入阿里云AccessKeyId
-  "AccessKeySecret": "xxxxx",  填入阿里云AccessKeySecret
+  "AccessKeyId": "xxxxx", # 填入阿里云AccessKeyId
+  "AccessKeySecret": "xxxxx",  # 填入阿里云AccessKeySecret
   "region_id":"cn-hongkong", # 填入机器的地域
   "name": "aliyun-HK-ECS",  # 填入通知名字
   "email": "xxxxxx@gmail.com", # 填入CF的个人邮箱
@@ -70,9 +69,6 @@ systemctl enable EcsTGBot.service
 systemctl status EcsTGBot.service
 
 ```
-
-
-
 
 
 ![1](images/1.png)
