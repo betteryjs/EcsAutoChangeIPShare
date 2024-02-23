@@ -30,7 +30,7 @@ cd EcsAutoChangeIPShare
   "domain": "example.xyz", # 填入ddns的主域名
   "TGBotAPI": "xxxxxxxxxxx", # 填入Botfather上面获取的TG bot token
   "chartId": "xxxxxxxxxx", # 填入上面获取的私聊chat_id或者群组chat_id
-  "ddnsUrl": "test.660114.xyz", # 填入要ddns的域名 先要吧Hinet的ip解析到要ddns的域名上
+  "ddnsUrl": "ddns.example.xyz", # 填入要ddns的域名 先要吧Hinet的ip解析到要ddns的域名上
   "checkGFWUrl": "http://填入在国内端部署的GFW检测程序的IP:5000/checkip/", # 例如 http://1.1.1.1:5000/checkip/
   "changeIPCrons": "0 3 * * *", #每日换IP的crontab 时间 默认每天凌晨3点
   "checkGfwCron": "*/10 * * * *", # 被墙检测默认10分钟1次
