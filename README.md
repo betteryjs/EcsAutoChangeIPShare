@@ -1,11 +1,30 @@
-## 在国内端部署 GFW检测程序
+# 在国内端部署 GFW检测程序
+
+## `docker`部署
 
 ```shell
 sudo docker run -d -p 5000:5000  --restart unless-stopped --name checkip betteryjs/checkip
-
 ```
 
+## 阿里云 云函数部署
+
+### 选择函数 点击创建函数
+![1](images/4.png)
+
+### 根据图示创建函数 上传 `aliyun-fc-checkip` 文件夹 点击创建
+![1](images/5.png)
+### 点击部署代码
+![1](images/6.png)
+### 点击域名管理 添加自定义域名
+
+
+
+
+
+
+
 ## 在 https://t.me/BotFather 创建通知机器人 
+
 ## 通过 https://t.me/getmyid_bot 获取私聊chat_id 或者 通过 https://t.me/get_id_bot 获取群组chat_id
 
 ## 克隆项目
@@ -70,9 +89,7 @@ systemctl status EcsTGBot.service
 
 ```
 
-
+### 在切换线路后要手动点击更换IP
 ![1](images/1.png)
-![1](images/2.png)
-![1](images/3.png)
 
 

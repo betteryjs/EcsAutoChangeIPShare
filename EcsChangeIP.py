@@ -23,38 +23,60 @@ class CreateEIP:
     def __init__(self):
 
         with open("config.json", 'r') as file:
-            configJson = json.loads(file.read())
+            self.configJson = json.loads(file.read())
 
-        self.email = configJson["email"]
-        self.api_key = configJson["api_key"]
-        self.domain = configJson["domain"]
-        self.API = configJson["TGBotAPI"]
+        self.email = self.configJson["email"]
+        self.api_key = self.configJson["api_key"]
+        self.domain = self.configJson["domain"]
+        self.API = self.configJson["TGBotAPI"]
         self.sendTelegramUrl = "https://api.telegram.org/bot" + self.API + "/sendMessage"
-        self.chartId = configJson["chartId"]
-        self.ddnsUrl = configJson["ddnsUrl"]
-        self.name = configJson["name"]
-        self.changeIPCrons = configJson["changeIPCrons"]
-        self.checkGfwCron = configJson["checkGfwCron"]
-        self.AccessKeyId = configJson["AccessKeyId"]
-        self.AccessKeySecret = configJson["AccessKeySecret"]
-        self.region_id = configJson["region_id"]
-        self.Linetype = configJson["Linetype"]
-        self.InstanceId = configJson["InstanceId"]
+        self.chartId = self.configJson["chartId"]
+        self.ddnsUrl = self.configJson["ddnsUrl"]
+        self.name = self.configJson["name"]
+        self.changeIPCrons = self.configJson["changeIPCrons"]
+        self.checkGfwCron = self.configJson["checkGfwCron"]
+        self.AccessKeyId = self.configJson["AccessKeyId"]
+        self.AccessKeySecret = self.configJson["AccessKeySecret"]
+        self.region_id = self.configJson["region_id"]
+        self.Linetype = self.configJson["Linetype"]
+        self.InstanceId = self.configJson["InstanceId"]
 
         self.AllocationId = ""
         self.EipAddress = ""
         self.BandwidthPackageId = ""
 
+        if self.Linetype == "BGP":
+            self.EcsAutoBandName = "EcsAutoBandBGP"
+        elif self.Linetype == "BGP_PRO":
+            self.EcsAutoBandName = "EcsAutoBandBGP_PRO"
+
         self.cf = CloudFlare(self.email, self.api_key, self.domain)
         self.credentials = AccessKeyCredential(self.AccessKeyId, self.AccessKeySecret)
         self.client = AcsClient(region_id=self.region_id, credential=self.credentials)
 
-        if self.findCommonBandwidthPackage() == "":
-            self.createCommonBandwidthPackage()
-        if self.findAllocationId() == "":
-            self.createIP()
-            self.IPBandEcs()
-        self.ecsAddToCommonBandwidthPackage()
+        self.sleepTime = 5
+
+        # 创建共享带宽
+        self.EcsAutoBandBGPID = self.findCommonBandwidthPackage("EcsAutoBandBGP")
+        self.EcsAutoBandBGP_PROID = self.findCommonBandwidthPackage("EcsAutoBandBGP_PRO")
+        if self.EcsAutoBandBGPID == "":
+            self.EcsAutoBandBGPID = self.createCommonBandwidthPackage("BGP", "EcsAutoBandBGP")
+        if self.EcsAutoBandBGP_PROID == "":
+            self.EcsAutoBandBGP_PROID = self.createCommonBandwidthPackage("BGP_PRO", "EcsAutoBandBGP_PRO")
+
+
+
+
+
+    def allocipinfo(self):
+        request = DescribeEipAddressesRequest()
+        request.set_accept_format('json')
+        request.set_ISP("BGP")
+        response = json.loads(self.client.do_action_with_exception(request).decode())
+        if not response["EipAddresses"]["EipAddress"]:
+            return "BGP_PRO"
+        else:
+            return "BGP"
 
     def createIP(self):
 
@@ -62,7 +84,7 @@ class CreateEIP:
         request.set_accept_format('json')
 
         request.set_Bandwidth("200")
-        request.set_ISP("BGP")
+        request.set_ISP(self.Linetype)
         request.set_InternetChargeType("PayByTraffic")
         request.set_InstanceChargeType("PostPaid")
         request.set_AutoPay(True)
@@ -71,23 +93,25 @@ class CreateEIP:
         response = json.loads(self.client.do_action_with_exception(request).decode())
         self.AllocationId = response["AllocationId"]
         self.EipAddress = response["EipAddress"]
-        logger.info("create EIP success! EipAddress is {}".format(self.EipAddress))
+        logger.info("create EIP success! EipAddress is {} and Linetype is {}".format(self.EipAddress, self.Linetype))
         self.cf_ddns(self.EipAddress)
         return self.AllocationId
 
-    def createCommonBandwidthPackage(self):
+    def createCommonBandwidthPackage(self, Linetype, EcsAutoBandName):
         request = CreateCommonBandwidthPackageRequest()
         request.set_accept_format('json')
 
-        request.set_ISP(self.Linetype)
+        request.set_ISP(Linetype)
         request.set_Bandwidth(2000)
         request.set_InternetChargeType("PayByDominantTraffic")
-        request.set_Name("EcsAutoBand")
+
+        request.set_Name(EcsAutoBandName)
 
         response = json.loads(self.client.do_action_with_exception(request).decode())
 
-        self.BandwidthPackageId = response["BandwidthPackageId"]
-        logger.info("EcsAutoBand create success and BandwidthPackageId is {}".format(response["BandwidthPackageId"]))
+        logger.info("{} create success and BandwidthPackageId is {}".format(EcsAutoBandName,
+                                                                            response["BandwidthPackageId"]))
+        return response["BandwidthPackageId"]
 
     def deleteIP(self):
         request = ReleaseEipAddressRequest()
@@ -96,10 +120,10 @@ class CreateEIP:
         request.set_AllocationId(self.findAllocationId())
 
         response = self.client.do_action_with_exception(request).decode()
-        print(response)
         logger.info(f"{self.EipAddress} delete success!")
 
     def cf_ddns(self, ip):
+        self.cf.refresh()
         res = self.cf.get_record('A', self.ddnsUrl)
         logger.debug("改变前 " + res["content"])
         self.cf.update_record(dns_type='A', name=self.ddnsUrl, content=ip, ttl=60)
@@ -124,45 +148,47 @@ class CreateEIP:
         logger.info("EcsAutoIP not exist")
         return ""
 
-    def findCommonBandwidthPackage(self):
+    def findCommonBandwidthPackage(self, EcsAutoBandName):
 
         request = DescribeCommonBandwidthPackagesRequest()
         request.set_accept_format('json')
 
-        request.set_Name("EcsAutoBand")
+        request.set_Name(EcsAutoBandName)
 
         response = json.loads(self.client.do_action_with_exception(request).decode())
         if not response["CommonBandwidthPackages"]["CommonBandwidthPackage"]:
-            logger.info("EcsAutoBand not exist ")
+            logger.info(f"{EcsAutoBandName} not exist ")
 
             return ""
         else:
-            msg = response["CommonBandwidthPackages"]["CommonBandwidthPackage"][0]["BandwidthPackageId"]
-            logger.info("EcsAutoBand exist and BandwidthPackageId is {}".format(msg))
 
-            self.BandwidthPackageId = msg
-            return msg
+            self.BandwidthPackageId = response["CommonBandwidthPackages"]["CommonBandwidthPackage"][0][
+                "BandwidthPackageId"]
 
-    def ecsAddToCommonBandwidthPackage(self):
-        if not self.eipInTheCommonBand():
-            request = AddCommonBandwidthPackageIpRequest()
-            request.set_accept_format('json')
-            request.set_BandwidthPackageId(self.BandwidthPackageId)
-            request.set_IpInstanceId(self.AllocationId)
-            request.set_IpType("EIP")
-            self.client.do_action_with_exception(request)
+            logger.info("{} exist and BandwidthPackageId is {}".format(
+                response["CommonBandwidthPackages"]["CommonBandwidthPackage"][0]["Name"],
+                self.BandwidthPackageId
+            ))
+            return self.BandwidthPackageId
 
-            logger.info("{} add to {} success!".format(self.AllocationId, self.BandwidthPackageId))
+    def ecsAddToCommonBandwidthPackage(self, AllocationId, BandwidthPackageId):
+        request = AddCommonBandwidthPackageIpRequest()
+        request.set_accept_format('json')
+        request.set_BandwidthPackageId(BandwidthPackageId)
+        request.set_IpInstanceId(AllocationId)
+        request.set_IpType("EIP")
+        self.client.do_action_with_exception(request)
+        logger.info("{} add to {} success!".format(AllocationId, BandwidthPackageId))
 
-    def RemoveCommonBandwidthPackageIp(self):
+    def RemoveCommonBandwidthPackageIp(self,AllocationId,BandwidthPackageId):
         request = RemoveCommonBandwidthPackageIpRequest()
         request.set_accept_format('json')
 
-        request.set_BandwidthPackageId(self.BandwidthPackageId)
-        request.set_IpInstanceId(self.AllocationId)
-
-        response = self.client.do_action_with_exception(request)
-        logger.info("{} remove to {} success!".format(self.AllocationId, self.BandwidthPackageId))
+        request.set_BandwidthPackageId(BandwidthPackageId)
+        request.set_IpInstanceId(AllocationId)
+        logger.info("RemoveCommonBandwidthPackageIp")
+        self.client.do_action_with_exception(request)
+        logger.info("{} remove to {} success!".format(AllocationId, BandwidthPackageId))
 
     def IPBandEcs(self):
         request = AssociateEipAddressRequest()
@@ -180,11 +206,11 @@ class CreateEIP:
         request.set_AllocationId(self.AllocationId)
 
         self.client.do_action_with_exception(request)
-        # python2:  print(response)
         logger.info(f"{self.EipAddress} remove to  {self.InstanceId} success!")
 
     def get_ip(self):
         try:
+            self.cf.refresh()
             res = self.cf.get_record('A', self.ddnsUrl)
             return res["content"]
 
@@ -192,16 +218,32 @@ class CreateEIP:
             logger.error(err)
 
     def changeEcsIP(self):
-        sleepTime = 1
-        time.sleep(sleepTime)
-        self.IPremoveEcs()
-        time.sleep(sleepTime)
-        self.RemoveCommonBandwidthPackageIp()
-        self.deleteIP()
-        self.createIP()
-        self.ecsAddToCommonBandwidthPackage()
-        self.IPBandEcs()
+        if self.findAllocationId() == "":
+            self.createIP()
+            time.sleep(self.sleepTime)
+            self.IPBandEcs()
+            if self.Linetype == "BGP":
+                self.ecsAddToCommonBandwidthPackage(self.AllocationId, self.EcsAutoBandBGPID)
+            elif self.Linetype == "BGP_PRO":
+                self.ecsAddToCommonBandwidthPackage(self.AllocationId, self.EcsAutoBandBGP_PROID)
+        else:
+            self.IPremoveEcs()
+            time.sleep(self.sleepTime)
+            if self.allocipinfo()=="BGP":
+                self.RemoveCommonBandwidthPackageIp(self.AllocationId,self.EcsAutoBandBGPID)
+            elif self.allocipinfo()=="BGP_PRO":
+                self.RemoveCommonBandwidthPackageIp(self.AllocationId,self.EcsAutoBandBGP_PROID)
 
+            self.deleteIP()
+
+
+            self.createIP()
+            if self.allocipinfo() == "BGP":
+                self.ecsAddToCommonBandwidthPackage(self.AllocationId, self.EcsAutoBandBGPID)
+            elif self.allocipinfo() == "BGP_PRO":
+                self.ecsAddToCommonBandwidthPackage(self.AllocationId, self.EcsAutoBandBGP_PROID)
+            time.sleep(self.sleepTime)
+            self.IPBandEcs()
 
     def eipInTheCommonBand(self):
         request = DescribeCommonBandwidthPackagesRequest()
@@ -210,6 +252,7 @@ class CreateEIP:
         request.set_BandwidthPackageId(self.BandwidthPackageId)
         logger.info(self.BandwidthPackageId)
         response = json.loads(self.client.do_action_with_exception(request).decode())
+
         if not response["CommonBandwidthPackages"]["CommonBandwidthPackage"]:
             logger.info("{} not in the {}".format(self.AllocationId, self.BandwidthPackageId))
             return False
@@ -221,6 +264,22 @@ class CreateEIP:
                         return True
             logger.info("{} not in the {}".format(self.AllocationId, self.BandwidthPackageId))
         return False
+
+    def changetoBGPPro(self):
+
+        self.configJson["Linetype"] = "BGP_PRO"
+        self.Linetype = "BGP_PRO"
+        with open("config.json", "w") as file:
+            file.write(json.dumps(self.configJson))
+
+    def changetoBGP(self):
+        self.configJson["Linetype"] = "BGP"
+        self.Linetype = "BGP"
+        with open("config.json", "w") as file:
+            file.write(json.dumps(self.configJson))
+
+    def showBgpOrPro(self):
+        return self.configJson["Linetype"]
 
 
 if __name__ == '__main__':

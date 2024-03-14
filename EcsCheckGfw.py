@@ -8,14 +8,12 @@ from loguru import logger
 logger.remove(handler_id=None)  # 清除之前的设置
 logger.add("ECS_IP.log", rotation="10MB", encoding="utf-8", enqueue=True, retention="5 days")
 
-
 from EcsChangeIP import CreateEIP
 
 eip = CreateEIP()
 
 
 class CheckGFW(object):
-
 
     def __init__(self):
         with open("config.json", 'r') as file:
@@ -31,70 +29,56 @@ class CheckGFW(object):
         self.domain = configJson["domain"]
         self.ddnsUrl = configJson["ddnsUrl"]
         self.cf = CloudFlare(self.email, self.api_key, self.domain)
+        self.checkssport="10241"
 
-
-
-
-
-    def sendTelegram(self,msg):
-        params={
-            "chat_id":self.chartId,
+    def sendTelegram(self, msg):
+        params = {
+            "chat_id": self.chartId,
             "text": msg
         }
-        resp=requests.get(url=self.sendTelegramUrl,params=params)
+        resp = requests.get(url=self.sendTelegramUrl, params=params)
         logger.debug(resp.text)
-
-
 
     def get_ip(self):
         try:
+            self.cf.refresh()
             res = self.cf.get_record('A', self.ddnsUrl)
             return res["content"]
 
         except Exception as err:
             logger.error(err)
 
-
-
-
-
     def check_gfw_block(self):
-        gfwUrl = self.checkGFWUrl + self.get_ip()
+        gfwUrl = self.checkGFWUrl + self.get_ip()+":"+self.checkssport
         resp = requests.get(url=gfwUrl).json()
-        if resp["isblock"]==True:
-            msg="[{}]-[GFW检测]-[IP ban 啦]".format(self.name)
+        logger.debug(gfwUrl)
+        logger.debug(resp)
+        if resp["isblock"] == True:
+            msg = "[{}]-[GFW检测]-[IP ban 啦]".format(self.name)
             self.sendTelegram(msg)
             logger.debug(msg)
             eip.changeEcsIP()
+            self.cf.refresh()
+            self.sendTelegram(f"IP更换成功 IP : {self.get_ip()}")
+
         else:
             logger.debug("[{}]-[GFW检测]-[IP正常]".format(self.name))
 
     def check_gfw_block_tg(self):
-        gfwUrl = self.checkGFWUrl + self.get_ip()
+        gfwUrl = self.checkGFWUrl + self.get_ip()+":"+self.checkssport
         resp = requests.get(url=gfwUrl).json()
-        if resp["isblock"]==True:
-            msg="[{}]-[GFW检测]-[IP ban 啦]".format(self.name)
+        logger.debug(resp)
+        if resp["isblock"] == True:
+            msg = "[{}]-[GFW检测]-[IP ban 啦]".format(self.name)
             logger.debug(msg)
-            return msg
+            self.sendTelegram(msg)
         else:
-            msg="[{}]-[GFW检测]-[IP正常]".format(self.name)
+            msg = "[{}]-[GFW检测]-[IP正常]".format(self.name)
             logger.debug(msg)
-            return msg
-
-
-
-
-
-
-
-
-
+            self.sendTelegram(msg)
 
 
 
 if __name__ == '__main__':
-
-    gfwtest=CheckGFW()
+    gfwtest = CheckGFW()
     gfwtest.check_gfw_block()
-
-

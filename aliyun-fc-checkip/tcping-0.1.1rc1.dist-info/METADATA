@@ -1,0 +1,27 @@
+Metadata-Version: 2.1
+Name: tcping
+Version: 0.1.1rc1
+Summary: command line for tcp ping
+Home-page: https://github.com/kontspace/tcping
+Author: zhengxiaowai
+Author-email: h1x2y3awalm@gmail.com
+License: MIT
+Keywords: python tcp ping
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Console
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: Microsoft
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Utilities
+Classifier: Topic :: System
+Requires-Dist: six
+Requires-Dist: click
+Requires-Dist: prettytable
+
+UNKNOWN
+

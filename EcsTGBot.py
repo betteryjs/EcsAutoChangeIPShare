@@ -28,34 +28,21 @@ checkgfw_job = my_cron.new(command=cmd2)
 
 changeip_job.setall(eip.changeIPCrons)
 checkgfw_job.setall(eip.checkGfwCron)
-changeip_job.enable(False) # 默认关闭
+changeip_job.enable(False)  # 默认关闭
 checkgfw_job.enable()
 my_cron.write()
-
-
-
-
-
-
-
-
-
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /help is issued."""
-    await update.message.reply_text("Help!")
 
 
 # def main() -> None:
 #     """Run the bot."""
 #     # Create the Application and pass it your bot's token.
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    # async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Sends a message with three inline buttons attached."""
     keyboard = [
         [
             InlineKeyboardButton("更换IP", callback_data="1"),
             InlineKeyboardButton("检测当前IP是否被墙", callback_data="2"),
-
 
         ],
         [
@@ -76,13 +63,21 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         ],
         [
             InlineKeyboardButton("获取当前ip", callback_data="9"),
-            InlineKeyboardButton("退出菜单", callback_data="10"),
+            InlineKeyboardButton("切换到BGP", callback_data="10")
+        ],
+        [
+            InlineKeyboardButton("切换到BGP_PRO", callback_data="11"),
+            InlineKeyboardButton("查看线路类型", callback_data="12"),
+        ],
+        [
+            InlineKeyboardButton("xxxxxxx", callback_data="13"),
+            InlineKeyboardButton("退出菜单", callback_data="14")
         ],
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    menumsg="选择你要进行的操作!"
+    menumsg = "选择你要进行的操作!"
     await update.message.reply_text(menumsg, reply_markup=reply_markup)
 
 
@@ -96,9 +91,9 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if query.data == "1":
         eip.changeEcsIP()
-        msg=f"change ip success  and ip is {eip.get_ip()}"
+        msg = f"change ip success! and ip is {eip.get_ip()}"
     elif query.data == "2":
-        msg=checkGfw.check_gfw_block_tg()
+        checkGfw.check_gfw_block_tg()
     elif query.data == "3":
         changeip_job.enable()
         my_cron.write()
@@ -134,29 +129,43 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             msg = "FGW自动换IP已开启 crontab is {}".format(eip.checkGfwCron)
 
     elif query.data == "9":
-        msg="当前IP是 {}".format(eip.get_ip())
+        msg = "当前IP是 {}".format(eip.get_ip())
     elif query.data == "10":
-        msg="exit success!"
+        eip.changetoBGP()
+        msg = "change BGP success!"
+    elif query.data == "11":
+        eip.changetoBGPPro()
+        msg = "change BGP_PRO success!"
+    elif query.data == "12":
+        msg=eip.showBgpOrPro()
+    elif query.data == "13":
+        msg="xxxxxxxx"
 
 
 
 
+    elif query.data == "14":
+        msg = "exit success!"
 
-
-    await query.answer()
+    # checkGfw.sendTelegram(msg)
 
     await query.edit_message_text(text=msg)
+    await query.answer()
 
 
 if __name__ == "__main__":
-
-
     application = Application.builder().token(token).build()
 
     # on different commands - answer in Telegram
     application.add_handler(CommandHandler("menu", menu))
     application.add_handler(CallbackQueryHandler(button))
-    application.add_handler(CommandHandler("help", help_command))
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
+    my_cron.remove(changeip_job)
+    my_cron.remove(checkgfw_job)
+    my_cron.write()
+
+
+
+
