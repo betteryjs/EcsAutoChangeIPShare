@@ -1,3 +1,0 @@
-[console_scripts]
-tcping = tcping:cli
-

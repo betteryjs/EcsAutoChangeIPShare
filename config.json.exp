@@ -13,5 +13,7 @@
   "changeIPCrons": "0 3 * * *",
   "checkGfwCron": "*/10 * * * *",
   "Linetype": "BGP",
-  "InstanceId": "xxxxxxxxxxxxxxxxxx"
+  "InstanceId": "xxxxxxxxxxxxxxxxxx",
+  "authorized_users": ["AS99294837"],
+  "checkgfwport": "10241"
 }

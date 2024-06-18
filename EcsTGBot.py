@@ -1,171 +1,174 @@
+# stop
+import signal
+import sys
 
-import json
 
-from telegram import  Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
+def signal_handler(signal, frame):
+    print('You pressed Ctrl+C!')
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 from loguru import logger
 import json
-from crontab import CronTab
 
-from EcsChangeIP import CreateEIP
-from EcsCheckGfw import  CheckGFW
+# loads config
+with open("config.json", 'r') as file:
+    config_json = json.loads(file.read())
+
+authorized_users = config_json["authorized_users"]
+logName = config_json["name"] + '.log'
+logger.remove(handler_id=None)  # 清除之前的设置
+logger.add(logName, rotation="15MB", encoding="utf-8", enqueue=True, retention="1 days")
+
+from telebot.util import quick_markup
+import telebot
+from EcsBase import CreateEIP
 
 eip = CreateEIP()
-checkGfw = CheckGFW()
+token = eip.API
+bot = telebot.TeleBot(token)
+
+bot.message_handler(commands=['help'])
 
 
-token = checkGfw.API
-# 创建当前用户的crontab，当然也可以创建其他用户的，但得有足够权限
-my_cron = CronTab(user=True)
+def send_welcome(message):
+    bot.reply_to(message, "Hello! Send /menu to see the menu.")
 
-# 创建任务
-cmd1="/root/EcsAutoChangeIPShare/EcsChangeIP.sh >/dev/null 2>&1"
-cmd2="/root/EcsAutoChangeIPShare/EcsCheckGfw.sh >/dev/null 2>&1"
-
-changeip_job = my_cron.new(command=cmd1)
-checkgfw_job = my_cron.new(command=cmd2)
-
-changeip_job.setall(eip.changeIPCrons)
-checkgfw_job.setall(eip.checkGfwCron)
-changeip_job.enable(False)  # 默认关闭
-checkgfw_job.enable()
-my_cron.write()
+    if is_authorized(message.from_user):
+        bot.reply_to(message, "Hello! Send /menu to see the menu.")
+    else:
+        bot.reply_to(message, "You are not authorized to use this bot.")
 
 
-# def main() -> None:
-#     """Run the bot."""
-#     # Create the Application and pass it your bot's token.
-async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Sends a message with three inline buttons attached."""
-    keyboard = [
-        [
-            InlineKeyboardButton("更换IP", callback_data="1"),
-            InlineKeyboardButton("检测当前IP是否被墙", callback_data="2"),
-
-        ],
-        [
-            InlineKeyboardButton("开启每日换IP", callback_data="3"),
-            InlineKeyboardButton("关闭每日换IP", callback_data="4"),
-
-        ],
-        [
-            InlineKeyboardButton("每日换IP状态", callback_data="5"),
-            InlineKeyboardButton("开启FGW自动换IP", callback_data="6"),
-
-        ],
-
-        [
-            InlineKeyboardButton("关闭FGW自动换IP", callback_data="7"),
-            InlineKeyboardButton("FGW自动换IP状态", callback_data="8"),
-
-        ],
-        [
-            InlineKeyboardButton("获取当前ip", callback_data="9"),
-            InlineKeyboardButton("切换到BGP", callback_data="10")
-        ],
-        [
-            InlineKeyboardButton("切换到BGP_PRO", callback_data="11"),
-            InlineKeyboardButton("查看线路类型", callback_data="12"),
-        ],
-        [
-            InlineKeyboardButton("xxxxxxx", callback_data="13"),
-            InlineKeyboardButton("退出菜单", callback_data="14")
-        ],
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    menumsg = "选择你要进行的操作!"
-    await update.message.reply_text(menumsg, reply_markup=reply_markup)
+@bot.message_handler(commands=['menu'])
+def menu_command(message):
+    if is_authorized(message.from_user):
+        send_menu(message)
+    else:
+        bot.reply_to(message, f"You are not authorized to use this bot. id is {message.from_user.id}"
+                              f"username is {message.from_user.username}")
 
 
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Parses the CallbackQuery and updates the message text."""
-    query = update.callback_query
+def send_menu(message):
+    button = {
+        "更换IP": {"callback_data": "1"},
+        "检测当前IP是否被墙": {"callback_data": "2"},
+        "开启每日换IP": {"callback_data": "3"},
+        "关闭每日换IP": {"callback_data": "4"},
+        "每日换IP状态": {"callback_data": "5"},
+        "开启FGW自动换IP": {"callback_data": "6"},
+        "关闭FGW自动换IP": {"callback_data": "7"},
+        "FGW自动换IP状态": {"callback_data": "8"},
+        "获取当前ip": {"callback_data": "9"},
+        "切换到BGP": {"callback_data": "10"},
+        "切换到BGP_PRO": {"callback_data": "11"},
+        "查看线路类型": {"callback_data": "12"},
+        "退出菜单": {"callback_data": "13"},
+        # "查看流量": {"callback_data": "15"},
+    }
+    menu_message = bot.send_message(message.chat.id, "选择你要进行的操作! ",
+                                    reply_markup=quick_markup(button, row_width=2))
 
-    # CallbackQueries need to be answered, even if no notification to the user is needed
-    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
-    # print("query.data       ", query.data)
 
-    if query.data == "1":
-        eip.changeEcsIP()
-        msg = f"change ip success! and ip is {eip.get_ip()}"
-    elif query.data == "2":
-        checkGfw.check_gfw_block_tg()
-    elif query.data == "3":
-        changeip_job.enable()
-        my_cron.write()
+@bot.callback_query_handler(func=lambda call: True)
+def refresh(call):
+    if call.data == "1":
+        logger.info("chick 更换IP")
+
+        msg = eip.changeEcsIP()
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "2":
+        logger.info("chick 检测当前IP是否被墙")
+        msg = eip.check_gfw_block()
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "3":
+        logger.info("chick 开启每日换IP")
+        eip.start_timer("changeip")
         msg = "开启每日换IP成功 crontab is {}".format(eip.changeIPCrons)
-    elif query.data == "4":
-        changeip_job.enable(False)
-        my_cron.write()
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "4":
+        logger.info("chick 关闭每日换IP")
+        eip.stop_timer("changeip")
         msg = "关闭每日换IP成功"
+        bot.send_message(call.message.chat.id, msg)
 
-    elif query.data == "5":
-        if not changeip_job.is_enabled():
-            msg = "每日换IP已关闭"
-        else:
+
+    elif call.data == "5":
+        logger.info("chick 每日换IP状态")
+        if eip.is_timer_running("changeip"):
             msg = "每日换IP已开启 crontab is {}".format(eip.changeIPCrons)
-
-
-    elif query.data == "6":
-        checkgfw_job.enable()
-        my_cron.write()
-        msg = "开启FGW自动换IP成功"
-
-
-    elif query.data == "7":
-
-        checkgfw_job.enable(False)
-        my_cron.write()
-        msg = "关闭FGW自动换IP成功"
-
-    elif query.data == "8":
-        if not checkgfw_job.is_enabled():
-            msg = "FGW自动换IP关闭"
         else:
-            msg = "FGW自动换IP已开启 crontab is {}".format(eip.checkGfwCron)
+            msg = "每日换IP已关闭"
+        bot.send_message(call.message.chat.id, msg)
 
-    elif query.data == "9":
+
+
+    elif call.data == "6":
+        logger.info("chick 开启GFW自动换IP")
+
+        eip.start_timer("checkGfw")
+        msg = "开启被墙自动换IP成功"
+        bot.send_message(call.message.chat.id, msg)
+
+
+
+    elif call.data == "7":
+        logger.info("chick 关闭FGW自动换IP")
+
+        eip.stop_timer("checkGfw")
+        msg = "关闭被墙自动换IP成功"
+        bot.send_message(call.message.chat.id, msg)
+
+
+    elif call.data == "8":
+        logger.info("chick GFW自动换IP状态")
+        if eip.is_timer_running("checkGfw"):
+            msg = "被墙自动换IP已开启 crontab is {}".format(eip.checkGfwCron)
+        else:
+            msg = "被墙自动换IP已关闭"
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "9":
+        logger.info("chick 获取当前ip")
         msg = "当前IP是 {}".format(eip.get_ip())
-    elif query.data == "10":
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "10":
         eip.changetoBGP()
         msg = "change BGP success!"
-    elif query.data == "11":
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "11":
         eip.changetoBGPPro()
         msg = "change BGP_PRO success!"
-    elif query.data == "12":
-        msg=eip.showBgpOrPro()
-    elif query.data == "13":
-        msg="xxxxxxxx"
+        bot.send_message(call.message.chat.id, msg)
+
+    elif call.data == "12":
+        msg = eip.showBgpOrPro()
+        bot.send_message(call.message.chat.id, msg)
 
 
-
-
-    elif query.data == "14":
+    elif call.data == "13":
         msg = "exit success!"
+        bot.send_message(call.message.chat.id, msg)
 
-    # checkGfw.sendTelegram(msg)
-
-    await query.edit_message_text(text=msg)
-    await query.answer()
+    bot.delete_message(call.message.chat.id, call.message.message_id)
 
 
-if __name__ == "__main__":
-    application = Application.builder().token(token).build()
+def is_authorized(user_identifier):
+    # 检查用户 ID 或用户名是否在授权用户列表中
 
-    # on different commands - answer in Telegram
-    application.add_handler(CommandHandler("menu", menu))
-    application.add_handler(CallbackQueryHandler(button))
-
-    # Run the bot until the user presses Ctrl-C
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-    my_cron.remove(changeip_job)
-    my_cron.remove(checkgfw_job)
-    my_cron.write()
+    if str(user_identifier.id) in authorized_users:
+        return True
+    elif user_identifier.username in authorized_users:
+        return True
+    return False
 
 
-
-
+if __name__ == '__main__':
+    bot.infinity_polling()

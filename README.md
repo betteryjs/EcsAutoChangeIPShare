@@ -6,21 +6,6 @@
 sudo docker run -d -p 5000:5000  --restart unless-stopped --name checkip betteryjs/checkip
 ```
 
-## 阿里云 云函数部署
-
-### 选择函数 点击创建函数
-![1](images/4.png)
-
-### 根据图示创建函数 上传 `aliyun-fc-checkip` 文件夹 点击创建
-![1](images/5.png)
-### 点击部署代码
-![1](images/6.png)
-### 点击域名管理 添加自定义域名
-
-
-
-
-
 
 
 ## 在 https://t.me/BotFather 创建通知机器人 
@@ -54,38 +39,28 @@ cd EcsAutoChangeIPShare
   "changeIPCrons": "0 3 * * *", #每日换IP的crontab 时间 默认每天凌晨3点
   "checkGfwCron": "*/10 * * * *", # 被墙检测默认10分钟1次
   "Linetype": "BGP",        # IP的类型 BGP 或者 BGP_PRO  BGP（默认值）：BGP（多线）线路。目前全部地域都支持 BGP（多线）线路 EIP。BGP_PRO：BGP（多线）_精品线路。目前仅中国香港、新加坡、日本（东京）、马来西亚（吉隆坡）、菲律宾（马尼拉）、印度尼西亚（雅加达）和泰国（曼谷）地域支持 BGP（多线）_精品线路 EIP。
-  "InstanceId": "xxxxxx"    # 要开启自动换IP的实例ID
+  "InstanceId": "xxxxxx",    # 要开启自动换IP的实例ID
+  "authorized_users": ["AS99294837"], # 机器人授权给那些用户
+  "checkgfwport": "10241"             # TCP检测的端口号 可以在这个端口建立一个节点 这样TCP端口就是打开的
 }
 
 ```
 
 
-## 在机子上安装python
+## 在机子上安装Python环境
 
 ```
-apt install python3-pip python3-venv
-```
-
-## 创建虚拟环境 venv
-```
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-## install requirements.txt
-
-```
-pip install -r requirements.txt
+./initvenv.sh
 ```
 
 
-## 复制 service
+
+
+
+
+## 配置开启Install
 ```
-cp  EcsTGBot.service  /lib/systemd/system/
-chmod 644 /lib/systemd/system/EcsTGBot.service
-systemctl start EcsTGBot.service
-systemctl enable EcsTGBot.service
-systemctl status EcsTGBot.service
+./install.sh
 
 ```
 
