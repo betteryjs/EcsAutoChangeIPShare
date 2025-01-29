@@ -1,19 +1,40 @@
 {
-  "AccessKeyId": "xxxxxxxxxxxx",
-  "AccessKeySecret": "xxxxxxxxxxxx",
-  "region_id":"cn-hongkong",
-  "name": "aliyun-HK-ECS",
-  "email": "xxxxxxxxxxxx@gmail.com",
-  "api_key": "xxxxxxxxxxxxxx",
-  "domain": "xxxxxxxxxxxx.xyz",
-  "TGBotAPI": "xxxxxxxxxxxxx",
-  "chartId": "xxxxxxxxxxxx",
-  "ddnsUrl": "xxxxxxxxxxxxxxxx",
-  "checkGFWUrl": "xxxxxxxxxxxxxxxxxx",
-  "changeIPCrons": "0 3 * * *",
-  "checkGfwCron": "*/10 * * * *",
-  "Linetype": "BGP",
-  "InstanceId": "xxxxxxxxxxxxxxxxxx",
-  "authorized_users": ["AS99294837"],
-  "checkgfwport": "10241"
+  "BaseConfig": {
+    "email": "xxxxx@gmail.com",
+    "api_key": "xxxx",
+    "domain": "xxxx",
+    "TGBotAPI": "xxxx",
+    "chartId": "xxxx",
+    "checkGFWUrl": "xxxx",
+    "authorized_users": [
+      "xxxx"
+    ],
+    "checkgfwport": "xxxx"
+  },
+  "EcsConfig": [
+    {
+      "AccessKeyId": "xxxxx",
+      "AccessKeySecret": "xxxxx",
+      "region_id": "cn-hongkong",
+      "name": "AliCloud-HK-ECS",
+      "ddnsUrl": "xxxxx",
+      "changeIPCrons": "0 3 * * *",
+      "checkGfwCron": "*/1 * * * *",
+      "Linetype": "BGP",
+      "InstanceId": "i-j6ci9ccan7f3z3f9qzou",
+      "cdtMax": 180
+    },
+    {
+      "AccessKeyId": "xxxxx",
+      "AccessKeySecret": "xxxxx",
+      "region_id": "ap-northeast-1",
+      "name": "AliCloud-JP-ECS",
+      "ddnsUrl": "xxxxx",
+      "changeIPCrons": "0 3 * * *",
+      "checkGfwCron": "*/1 * * * *",
+      "Linetype": "BGP",
+      "InstanceId": "i-6weiufe1kyocvgpekyq5",
+      "cdtMax": 180
+    }
+  ]
 }

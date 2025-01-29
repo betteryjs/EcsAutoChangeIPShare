@@ -42,24 +42,46 @@ cd EcsAutoChangeIPShare
 
 ```shell
 {
-  "AccessKeyId": "xxxxx", # 填入阿里云AccessKeyId
-  "AccessKeySecret": "xxxxx",  # 填入阿里云AccessKeySecret
-  "region_id":"cn-hongkong", # 填入机器的地域
-  "name": "aliyun-HK-ECS",  # 填入通知名字
-  "email": "xxxxxx@gmail.com", # 填入CF的个人邮箱
-  "api_key": "xxxxxxxxxxxx", # 填入CF的Global API Key	
-  "domain": "example.xyz", # 填入ddns的主域名
-  "TGBotAPI": "xxxxxxxxxxx", # 填入Botfather上面获取的TG bot token
-  "chartId": "xxxxxxxxxx", # 填入上面获取的私聊chat_id或者群组chat_id
-  "ddnsUrl": "ddns.example.xyz", # 填入要ddns的域名 先要吧Hinet的ip解析到要ddns的域名上
-  "checkGFWUrl": "http://填入在国内端部署的GFW检测程序的IP:5000/checkip/", # 例如 http://1.1.1.1:5000/checkip/
-  "changeIPCrons": "0 3 * * *", #每日换IP的crontab 时间 默认每天凌晨3点
-  "checkGfwCron": "*/10 * * * *", # 被墙检测默认10分钟1次
-  "Linetype": "BGP",        # IP的类型 BGP 或者 BGP_PRO  BGP（默认值）：BGP（多线）线路。目前全部地域都支持 BGP（多线）线路 EIP。BGP_PRO：BGP（多线）_精品线路。目前仅中国香港、新加坡、日本（东京）、马来西亚（吉隆坡）、菲律宾（马尼拉）、印度尼西亚（雅加达）和泰国（曼谷）地域支持 BGP（多线）_精品线路 EIP。
-  "InstanceId": "xxxxxx",    # 要开启自动换IP的实例ID
-  "authorized_users": ["AS99294837"], # 机器人授权给那些用户
-  "checkgfwport": "10241"             # TCP检测的端口号 可以在这个端口建立一个节点 这样TCP端口就是打开的
+  "BaseConfig": {
+    "email": "xxxxx@gmail.com", # 填入CF的个人邮箱
+    "api_key": "xxxx",          # 填入CF的Global API Key	
+    "domain": "example.com",    # 填入ddns的主域名
+    "TGBotAPI": "xxxx",  # 填入Botfather上面获取的TG bot token
+    "chartId": "xxxx",   # 填入上面获取的私聊chat_id或者群组chat_id
+    "checkGFWUrl": "http://填入在国内端部署的GFW检测程序的IP:5000/checkip/", # 例如 http://1.1.1.1:5000/checkip/
+    "authorized_users": [
+      "AS99294837"       # 机器人授权给那些用户
+    ],
+    "checkgfwport": "10241"             # TCP检测的端口号 可以在这个端口建立一个节点 这样TCP端口就是打开的
+  },
+  "EcsConfig": [
+    {
+      "AccessKeyId": "xxxxx", # 填入阿里云AccessKeyId
+      "AccessKeySecret": "xxxxx", #填入阿里云AccessKeySecret
+      "region_id": "cn-hongkong", # 填入机器的地域
+      "name": "AliCloud-HK-ECS",  # 填入通知名字
+      "ddnsUrl": "xxxxx", # 填入要ddns的域名 hkg.example.com
+      "changeIPCrons": "0 3 * * *", #每日换IP的crontab 时间 默认每天凌晨3点
+      "checkGfwCron": "*/1 * * * *", # 被墙检测默认1分钟1次
+      "Linetype": "BGP",  # # IP的类型 BGP 或者 BGP_PRO  
+      "InstanceId": "xxxxxx",    # 要开启自动换IP的实例ID
+      "cdtMax": 180    # cdt 检测
+    },
+    {
+      "AccessKeyId": "xxxxx",
+      "AccessKeySecret": "xxxxx",
+      "region_id": "ap-northeast-1",
+      "name": "AliCloud-JP-ECS",
+      "ddnsUrl": "xxxxx",
+      "changeIPCrons": "0 3 * * *",
+      "checkGfwCron": "*/1 * * * *",
+      "Linetype": "BGP",
+      "InstanceId": "i-6weiufe1kyocvgpekyq5",
+      "cdtMax": 180
+    }
+  ]
 }
+
 
 ```
 

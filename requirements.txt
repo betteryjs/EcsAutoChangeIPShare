@@ -1,7 +1,11 @@
 aliyun-python-sdk-core
 aliyun-python-sdk-vpc==3.0.45
+alibabacloud_cdt20210813
+aliyun-python-sdk-ecs==4.24.79
 cloudflare-ddns
 loguru
 pyTelegramBotAPI
 schedule
 croniter
+
+
