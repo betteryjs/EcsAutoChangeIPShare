@@ -7,7 +7,7 @@
 
 <div style="text-align: center;">
     <a href="https://yxvm.com/">
-        <img src="https://yxvm.com/assets/img/logo.png" width="170.7" height="62.9">
+        <img src="https://raw.githubusercontent.com/betteryjs/EcsAutoChangeIPShare/refs/heads/master/images/logo.webp" width="170.7" height="62.9">
     </a>
 </div>
 
